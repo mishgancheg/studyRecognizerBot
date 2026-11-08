@@ -1,0 +1,25 @@
+# Особенности проекта для общего навыка развёртывания (.agents/skills/deploy). Файл хранится в git и секретов не
+# содержит. Всё остальное — имя службы, каталог, домен, порт — берётся из config/deploy.local.yaml и config/local.yaml.
+#
+# В командах шагов (`run`) подстановка {{local.<путь>}} заменяется значением из config/local.yaml навыка (при
+# развёртывании) или из config/local.yaml на сервере (при автообновлении).
+
+title: телеграм-бот оцифровки конспектов (textrec)
+
+nginx:
+  # Фото ужимаются в Mini App, но пачка из 30 страниц всё равно весит десятки мегабайт.
+  clientMaxBodySize: 200m
+  proxyTimeout: 120s
+
+deploy:
+  - title: Каталог данных и ключ записи в репозиторий с учёбой
+    run: >-
+      mkdir -p {{local.data.dir}}
+      && { [ -f {{local.notes.sshKeyPath}} ]
+      || ssh-keygen -q -t ed25519 -N '' -f {{local.notes.sshKeyPath}} -C textrec-notes-write; }
+      && echo 'Открытый ключ для репозитория с учёбой (Deploy key С ПРАВОМ ЗАПИСИ):'
+      && cat {{local.notes.sshKeyPath}}.pub
+
+status:
+  - title: Репозиторий с учёбой
+    run: node scripts/check-notes-access.js

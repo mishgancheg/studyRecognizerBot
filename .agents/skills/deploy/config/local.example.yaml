@@ -1,0 +1,30 @@
+# Образец config/local.yaml приложения textrec. Настоящий файл (рядом, local.yaml) копируется на сервер дословно
+# в config/local.yaml рабочей копии; для запуска на своей машине тот же формат кладётся в config/local.yaml проекта.
+
+webServer:
+  host: 127.0.0.1
+  port: 9071 # на этот порт смотрит nginx
+  auth:
+    enabled: false # ключи доступа навыка не нужны: /api проверяет подпись Telegram
+
+telegram:
+  botToken: '<токен от @BotFather>'
+  allowedUserIds: '<ваш Telegram ID; несколько — через запятую>'
+  publicUrl: 'https://textrec.bazilio.ru' # адрес Mini App, его открывает кнопка бота
+
+recognition:
+  oauthToken: '<токен из claude setup-token>'
+  model: opus # модель Claude для распознавания: opus или sonnet
+  timeoutSec: 600
+  maxPhotos: 30
+
+notes:
+  repoUrl: 'git@github.com:mishgancheg/study.git'
+  branch: main
+  sshKeyPath: /root/.ssh/textrec-notes # ключ записи; его создаёт шаг deploy
+  authorName: textrec-bot
+  authorEmail: textrec-bot@users.noreply.github.com
+
+data:
+  dir: /opt/py/textrec-data # задания с фото, клон репозитория с учёбой, настройки Claude
+  photoRetentionDays: 30

@@ -1,0 +1,26 @@
+{
+  "name": "textrec",
+  "version": "0.1.0",
+  "description": "Телеграм-бот с Mini App: распознаёт фото рукописных конспектов через Claude Code и сохраняет текст в репозиторий с учёбой",
+  "main": "index.js",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test \"tests/*.test.js\"",
+    "migrate": "node scripts/migrate.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-code": "2.1.319",
+    "express": "^5.3.0",
+    "grammy": "^1.46.0",
+    "multer": "^2.5.0",
+    "yaml": "^2.9.1"
+  },
+  "allowScripts": {
+    "@anthropic-ai/claude-code@2.1.319": true
+  }
+}

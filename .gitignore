@@ -1,2 +1,16 @@
 /claudedocs/credits.md
 /.idea
+/.venv
+node_modules/
+.env
+
+# Настройки приложения с секретами; в git хранится только образец
+/config/local.yaml
+# Файл настроек автообновления на сервере (его пишет deploy навыка; без этой строки git clean удалял бы его)
+/deploy/deploy-config.yml
+
+# Локальные данные разработки: задания распознавания, клон репозитория с записями, настройки Claude
+/_data/
+
+# Ссылка .claude/skills -> .agents/skills (создаётся локально)
+/.claude/skills

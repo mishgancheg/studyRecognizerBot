@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Оцифровка конспекта</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📝%3C/text%3E%3C/svg%3E">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app">
+    <!-- Шаг 1: куда сохранить и какие фото распознать -->
+    <section id="step-form" class="step">
+      <h1>Новая запись</h1>
+      <label class="field">
+        <span>Семестр</span>
+        <select id="semester"></select>
+      </label>
+      <label class="field">
+        <span>Предмет</span>
+        <select id="subject"></select>
+      </label>
+      <label class="field" id="new-subject-field" hidden>
+        <span>Название нового предмета</span>
+        <input id="new-subject" type="text" maxlength="80" placeholder="Например: Математический анализ">
+      </label>
+      <div class="row">
+        <label class="field">
+          <span>Дата пары</span>
+          <input id="date" type="date">
+        </label>
+        <label class="field grow">
+          <span>Тема (необязательно)</span>
+          <input id="topic" type="text" maxlength="80" placeholder="Например: Пределы">
+        </label>
+      </div>
+
+      <div class="field">
+        <span>Фото страниц по порядку</span>
+        <div id="photos" class="photos"></div>
+        <label class="btn secondary file-btn">
+          ➕ Добавить фото
+          <input id="photo-input" type="file" accept="image/*" multiple>
+        </label>
+      </div>
+
+      <p id="form-error" class="error" hidden></p>
+      <button id="recognize-btn" class="btn primary" disabled>Распознать</button>
+    </section>
+
+    <!-- Шаг 2: ожидание распознавания -->
+    <section id="step-wait" class="step" hidden>
+      <div class="spinner"></div>
+      <h2 id="wait-title">Загружаю фото…</h2>
+      <p class="hint" id="wait-hint">Приложение можно свернуть: распознавание продолжится, а текст будет ждать здесь.</p>
+      <p id="wait-error" class="error" hidden></p>
+      <button id="wait-back-btn" class="btn secondary" hidden>Вернуться к фото</button>
+    </section>
+
+    <!-- Шаг 3: проверка и сохранение текста -->
+    <section id="step-edit" class="step" hidden>
+      <div class="tabs">
+        <button class="tab active" data-tab="editor">Редактор</button>
+        <button class="tab" data-tab="preview">Просмотр</button>
+      </div>
+      <p class="target" id="target"></p>
+      <textarea id="editor" spellcheck="true"></textarea>
+      <article id="preview" class="preview" hidden></article>
+      <p id="edit-error" class="error" hidden></p>
+      <div class="row">
+        <button id="restart-btn" class="btn secondary">Заново</button>
+        <button id="save-btn" class="btn primary grow">Сохранить в репозиторий</button>
+      </div>
+    </section>
+
+    <!-- Шаг 4: готово -->
+    <section id="step-done" class="step" hidden>
+      <div class="done-mark">✓</div>
+      <h2>Запись сохранена</h2>
+      <p class="path" id="saved-path"></p>
+      <button id="new-btn" class="btn primary">Новая запись</button>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

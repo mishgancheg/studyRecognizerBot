@@ -1,0 +1,105 @@
+:root {
+  --bg: var(--tg-theme-bg-color, #ffffff);
+  --bg2: var(--tg-theme-secondary-bg-color, #f2f3f5);
+  --text: var(--tg-theme-text-color, #111111);
+  --hint: var(--tg-theme-hint-color, #8a8f98);
+  --link: var(--tg-theme-link-color, #2a7ae2);
+  --btn: var(--tg-theme-button-color, #2a7ae2);
+  --btn-text: var(--tg-theme-button-text-color, #ffffff);
+  --danger: var(--tg-theme-destructive-text-color, #d93838);
+  --radius: 12px;
+  color-scheme: light dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+main { max-width: 760px; margin: 0 auto; padding: 16px 16px 32px; }
+h1 { font-size: 22px; margin: 4px 0 16px; }
+h2 { font-size: 19px; margin: 12px 0 8px; text-align: center; }
+
+.step { display: flex; flex-direction: column; gap: 14px; }
+.step[hidden] { display: none; }
+
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field > span { font-size: 13px; color: var(--hint); }
+.field[hidden] { display: none; }
+.row { display: flex; gap: 10px; align-items: flex-end; }
+.grow { flex: 1; }
+
+input[type="text"], input[type="date"], select, textarea {
+  width: 100%;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg2);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--btn); }
+
+.btn {
+  font: inherit;
+  font-weight: 600;
+  border: 0;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  cursor: pointer;
+  text-align: center;
+}
+.btn.primary { background: var(--btn); color: var(--btn-text); }
+.btn.secondary { background: var(--bg2); color: var(--link); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+
+.file-btn { position: relative; display: block; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.photos:empty { display: none; }
+.photo { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: var(--bg2); }
+.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo .num {
+  position: absolute; top: 4px; left: 4px; min-width: 22px; height: 22px; padding: 0 6px;
+  border-radius: 11px; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 13px; line-height: 22px; text-align: center;
+}
+.photo .ctrl { position: absolute; inset: auto 0 0 0; display: flex; justify-content: space-between; background: rgba(0, 0, 0, 0.45); }
+.photo .ctrl button { flex: 1; border: 0; background: none; color: #fff; font-size: 16px; padding: 6px 0; cursor: pointer; }
+
+.error { color: var(--danger); margin: 0; white-space: pre-wrap; }
+.error[hidden] { display: none; }
+.hint { color: var(--hint); text-align: center; margin: 0; }
+
+.spinner {
+  width: 44px; height: 44px; margin: 48px auto 8px;
+  border: 4px solid var(--bg2); border-top-color: var(--btn); border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.tabs { display: flex; background: var(--bg2); border-radius: var(--radius); padding: 3px; }
+.tab { flex: 1; font: inherit; border: 0; background: none; color: var(--hint); padding: 8px; border-radius: 10px; cursor: pointer; }
+.tab.active { background: var(--bg); color: var(--text); font-weight: 600; }
+
+.target { margin: 0; font-size: 13px; color: var(--hint); word-break: break-word; }
+
+textarea#editor { min-height: 60vh; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; line-height: 1.5; }
+
+.preview { background: var(--bg2); border-radius: var(--radius); padding: 4px 14px; min-height: 60vh; overflow-x: auto; word-wrap: break-word; }
+.preview[hidden] { display: none; }
+.preview table { border-collapse: collapse; display: block; overflow-x: auto; }
+.preview th, .preview td { border: 1px solid var(--hint); padding: 4px 8px; }
+.preview .katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+.preview a { color: var(--link); }
+
+.done-mark {
+  width: 64px; height: 64px; margin: 48px auto 0; border-radius: 50%;
+  background: var(--btn); color: var(--btn-text); font-size: 36px; line-height: 64px; text-align: center;
+}
+.path { text-align: center; color: var(--hint); word-break: break-word; margin: 0 0 8px; }
