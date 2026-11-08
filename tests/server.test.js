@@ -23,7 +23,8 @@ before(async () => {
     notes: { repoUrl: remote },
     data: { dir: root },
   });
-  jobs = new Jobs(config.data.jobsDir, async (_dir, names) => `# Распознано ${names.length}`);
+  jobs = new Jobs(config.data.jobsDir, async (_dir, names) =>
+    names.map((photo, i) => ({ photo, text: `# Страница ${i + 1}` })),);
   const notes = new NotesRepo({ dir: config.data.notesDir, ...config.notes });
   const app = createApp({ config, jobs, notes, notify: async (id, text) => messages.push({ id, text }) });
   await new Promise((r) => (server = app.listen(0, '127.0.0.1', r)));
@@ -56,17 +57,22 @@ test('полный путь: фото, распознавание, сохран�
   const { id } = await up.json();
   await jobs.chain;
   const job = await (await fetch(`${base}/api/jobs/${id}`, { headers: auth() })).json();
-  assert.deepEqual([job.status, job.text], ['done', '# Распознано 2']);
+  assert.equal(job.status, 'done');
+  assert.deepEqual(job.pages.map((p) => p.text), ['# Страница 1', '# Страница 2']);
+  const photo = await fetch(`${base}/api/jobs/${id}/photos/02.jpg`, { headers: auth() });
+  assert.equal(await photo.text(), 'jpeg2');
+  assert.equal((await fetch(`${base}/api/jobs/${id}/photos/02.jpg`)).status, 401);
+  assert.equal((await fetch(`${base}/api/jobs/${id}/photos/09.jpg`, { headers: auth() })).status, 404);
 
   const save = await fetch(`${base}/api/save`, {
     method: 'POST',
     headers: { ...auth(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ semester: '4', subject: 'Базы данных', date: '2026-11-07', topic: 'SQL', text: job.text }),
+    body: JSON.stringify({ semester: '4', subject: 'Базы данных', date: '2026-11-07', topic: 'SQL', text: job.pages[1].text }),
   });
   assert.equal(save.status, 200);
   assert.equal((await save.json()).path, '4 семестр/Базы данных/Записи/2026-11-07_SQL.md');
   const stored = git(path.dirname(remote), '--git-dir', remote, 'show', 'main:4 семестр/Базы данных/Записи/2026-11-07_SQL.md');
-  assert.match(stored, /# Распознано 2/);
+  assert.match(stored, /# Страница 2/);
   assert.equal(messages.at(-1).id, USER_ID);
 
   const tree = await (await fetch(`${base}/api/tree`, { headers: auth() })).json();

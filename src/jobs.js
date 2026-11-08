@@ -5,11 +5,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ID_RE = /^[0-9]{8}-[0-9]{6}-[0-9a-f]{6}$/;
+const PHOTO_RE = /^[0-9]{2}\.jpg$/;
 
 export class Jobs {
   /**
    * @param {string} dir каталог заданий
-   * @param {(dir: string, names: string[]) => Promise<string>} recognizeFn распознавание
+   * @param {(dir: string, names: string[]) => Promise<{ photo: string, text: string }[]>} recognizeFn распознавание
+   *   (текст по страницам: страница = одно фото)
    */
   constructor(dir, recognizeFn) {
     this.dir = dir;
@@ -56,6 +58,15 @@ export class Jobs {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
   }
 
+  /** Путь к фото задания; Mini App показывает его рядом с распознанным текстом. */
+  photoFile(id, name) {
+    const file = path.join(this.jobDir(id), String(name));
+    if (!PHOTO_RE.test(name) || !fs.existsSync(file)) {
+      throw Object.assign(new Error('Фото уже удалено с сервера'), { status: 404 });
+    }
+    return file;
+  }
+
   /**
    * Создаёт задание из загруженных фото и ставит его в очередь.
    * @param {{ buffer: Buffer }[]} photos фото по порядку
@@ -77,8 +88,8 @@ export class Jobs {
         this.write(id, { status: 'running', photos: names.length, created, started: Date.now() });
         let state;
         try {
-          const text = await this.recognizeFn(dir, names);
-          state = { status: 'done', photos: names.length, created, finished: Date.now(), text };
+          const pages = await this.recognizeFn(dir, names);
+          state = { status: 'done', photos: names.length, created, finished: Date.now(), pages };
         } catch (error) {
           state = { status: 'error', photos: names.length, created, finished: Date.now(), error: error.message };
         }

@@ -61,20 +61,25 @@
       <button id="wait-back-btn" class="btn secondary" hidden>Вернуться к фото</button>
     </section>
 
-    <!-- Шаг 3: проверка и сохранение текста -->
-    <section id="step-edit" class="step" hidden>
-      <div class="tabs">
-        <button class="tab active" data-tab="editor">Редактор</button>
-        <button class="tab" data-tab="preview">Просмотр</button>
+    <!-- Шаг 3: проверка и сохранение текста. Сверху фото страницы, снизу её текст. -->
+    <section id="step-edit" class="step edit" hidden>
+      <div id="photo-pane" class="photo-pane">
+        <img id="photo-img" alt="" draggable="false" hidden>
+        <p id="photo-msg" class="photo-msg" hidden></p>
       </div>
-      <p class="target" id="target"></p>
-      <textarea id="editor" spellcheck="true"></textarea>
-      <article id="preview" class="preview" hidden></article>
-      <p id="edit-error" class="error" hidden></p>
-      <div class="row">
-        <button id="restart-btn" class="btn secondary">Заново</button>
-        <button id="save-btn" class="btn primary grow">Сохранить в репозиторий</button>
+      <div id="text-pane" class="text-pane">
+        <article id="preview" class="preview"></article>
+        <textarea id="editor" spellcheck="true" hidden></textarea>
+        <button id="mode-btn" class="mode-btn" type="button"></button>
       </div>
+      <button id="drawer-tab" class="drawer-tab" type="button" aria-label="Список фото"><span id="drawer-tab-num">1</span></button>
+      <div id="drawer-backdrop" class="drawer-backdrop"></div>
+      <aside id="drawer" class="drawer">
+        <p class="target" id="target"></p>
+        <ol id="page-list" class="page-list"></ol>
+        <button id="save-fallback-btn" class="btn primary" hidden>Сохранить в репозиторий</button>
+        <button id="restart-btn" class="btn secondary">Начать заново</button>
+      </aside>
     </section>
 
     <!-- Шаг 4: готово -->
@@ -85,6 +90,6 @@
       <button id="new-btn" class="btn primary">Новая запись</button>
     </section>
   </main>
-  <script src="app.js"></script>
+  <script defer src="app.js"></script>
 </body>
 </html>

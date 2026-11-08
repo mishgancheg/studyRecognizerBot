@@ -58,6 +58,10 @@ export function createApp({ config, jobs, notes, notify = async () => {} }) {
     res.json(jobs.get(req.params.id));
   });
 
+  api.get('/jobs/:id/photos/:name', (req, res) => {
+    res.sendFile(jobs.photoFile(req.params.id, req.params.name), { maxAge: '1d' });
+  });
+
   api.post('/save', express.json({ limit: '2mb' }), async (req, res) => {
     const { semester, subject, date, topic, text } = req.body || {};
     if (!String(text || '').trim()) throw Object.assign(new Error('Текст пустой'), { status: 400 });

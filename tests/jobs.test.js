@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { Jobs } from '../src/jobs.js';
-import { cleanResult } from '../src/recognizer.js';
+import { cleanResult, splitPages } from '../src/recognizer.js';
 import { tmpDir } from './helpers.js';
 
 const photo = (s) => ({ buffer: Buffer.from(s) });
@@ -17,14 +17,20 @@ test('задания выполняются по одному и сохраня�
     await new Promise((r) => setTimeout(r, 20));
     seen.push(names);
     running--;
-    return `текст из ${names.length}`;
+    return names.map((photo) => ({ photo, text: `текст ${photo}` }));
   });
   const done = [];
   const a = jobs.create([photo('1'), photo('2')], (j) => done.push(j));
   const b = jobs.create([photo('3')], (j) => done.push(j));
   await jobs.chain;
   assert.deepEqual(seen, [['01.jpg', '02.jpg'], ['01.jpg']]);
-  assert.equal(jobs.get(a).text, 'текст из 2');
+  assert.deepEqual(jobs.get(a).pages, [
+    { photo: '01.jpg', text: 'текст 01.jpg' },
+    { photo: '02.jpg', text: 'текст 02.jpg' },
+  ]);
+  assert.match(jobs.photoFile(a, '02.jpg'), /02.jpg$/);
+  assert.throws(() => jobs.photoFile(a, '03.jpg'), { status: 404 });
+  assert.throws(() => jobs.photoFile(a, 'result.json'), { status: 404 });
   assert.equal(jobs.get(b).status, 'done');
   assert.equal(done.length, 2);
 });
@@ -65,4 +71,18 @@ test('старые задания удаляются', async () => {
 test('обёртка ```markdown снимается с ответа', () => {
   assert.equal(cleanResult('```markdown\n# Тема\nтекст\n```'), '# Тема\nтекст');
   assert.equal(cleanResult('  # Тема  '), '# Тема');
+});
+
+test('ответ модели делится на страницы по меткам', () => {
+  const names = ['01.jpg', '02.jpg', '03.jpg'];
+  const raw = '```markdown\n<<<01.jpg>>>\n# Тема\nначало\n\n<<<02.jpg>>>\n$x^2$\n<<<03.jpg>>>\n\n```';
+  assert.deepEqual(splitPages(raw, names), [
+    { photo: '01.jpg', text: '# Тема\nначало' },
+    { photo: '02.jpg', text: '$x^2$' },
+    { photo: '03.jpg', text: '' },
+  ]);
+  assert.deepEqual(splitPages('без меток', names.slice(0, 2)), [
+    { photo: '01.jpg', text: 'без меток' },
+    { photo: '02.jpg', text: '' },
+  ]);
 });

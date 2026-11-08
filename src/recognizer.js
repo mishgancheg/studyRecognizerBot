@@ -14,13 +14,19 @@ export function claudeBinary() {
   return path.join(path.dirname(pkgFile), typeof bin === 'string' ? bin : bin.claude);
 }
 
+/** Строка-метка, которой модель открывает текст каждой фотографии. */
+export const pageMarker = (name) => `<<<${name}>>>`;
+
 export function buildPrompt(photoNames) {
   return `Это фотографии страниц рукописного конспекта студента с пары, по порядку: ${photoNames.join(', ')}.
-Открой каждый файл инструментом Read в указанном порядке и перепиши конспект в текст.
+Открой каждый файл инструментом Read в указанном порядке и перепиши каждую страницу в текст.
 
 Правила:
-- Выведи ТОЛЬКО текст конспекта в формате Markdown — без вступлений, пояснений и заключений от себя.
-- Сохраняй структуру: заголовки, списки, нумерацию, выделения, порядок страниц. Страницы склей в один текст.
+- Текст каждой фотографии начинай отдельной строкой-меткой с именем файла, например ${pageMarker(photoNames[0] || '01.jpg')}, и дальше пиши
+  текст только этой страницы. Метки выведи для всех фото по порядку, даже если страница пустая.
+- Страницы не склеивай и текст между ними не переноси: под меткой ровно то, что написано на этом фото.
+- Кроме меток выведи ТОЛЬКО текст конспекта в формате Markdown — без вступлений, пояснений и заключений от себя.
+- Сохраняй структуру: заголовки, списки, нумерацию, выделения.
 - Формулы записывай в LaTeX: внутри строки $...$, отдельной строкой $$...$$.
 - Таблицы — таблицами Markdown.
 - Рисунки, графики и схемы опиши кратко в квадратных скобках: [Рисунок: ...].
@@ -36,7 +42,28 @@ export function cleanResult(text) {
 }
 
 /**
- * Распознаёт фото из каталога задания. Возвращает текст Markdown.
+ * Делит ответ модели на страницы по меткам. Текст до первой метки и при полном отсутствии меток
+ * достаётся первой странице, метка с незнакомым именем продолжает предыдущую страницу.
+ * @returns {{ photo: string, text: string }[]}
+ */
+export function splitPages(raw, photoNames) {
+  const texts = photoNames.map(() => '');
+  const re = /^[ \t]*<<<\s*([^<>\s]+)\s*>>>[ \t]*$/gm;
+  let cur = 0;
+  let last = 0;
+  const text = cleanResult(raw);
+  for (let m; (m = re.exec(text)); ) {
+    texts[cur] += text.slice(last, m.index);
+    const idx = photoNames.indexOf(m[1]);
+    if (idx >= 0) cur = idx;
+    last = re.lastIndex;
+  }
+  texts[cur] += text.slice(last);
+  return photoNames.map((photo, i) => ({ photo, text: cleanResult(texts[i]) }));
+}
+
+/**
+ * Распознаёт фото из каталога задания за один вызов Claude Code. Возвращает текст Markdown по страницам.
  * @param {string} dir каталог с фото
  * @param {string[]} photoNames имена файлов по порядку
  */
@@ -93,9 +120,9 @@ export function recognize(dir, photoNames, { oauthToken, model, timeoutSec, clau
       if (parsed.is_error || parsed.subtype !== 'success') {
         return reject(new Error(`Claude Code вернул ошибку: ${String(parsed.result || parsed.subtype).slice(0, 500)}`));
       }
-      const text = cleanResult(parsed.result);
-      if (!text) return reject(new Error('Claude Code вернул пустой текст'));
-      resolve(text);
+      const pages = splitPages(parsed.result, photoNames);
+      if (!pages.some((p) => p.text)) return reject(new Error('Claude Code вернул пустой текст'));
+      resolve(pages);
     });
   });
 }
