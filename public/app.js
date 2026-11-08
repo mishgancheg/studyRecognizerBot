@@ -13,8 +13,6 @@
     if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
   }
   if (window.marked) window.marked.setOptions({ breaks: true });
-  // Внутри Telegram кнопка «Сохранить» — его собственная нижняя кнопка, она не занимает место на экране.
-  const useMainButton = !!(tg && tg.initData && tg.MainButton);
 
   const $ = (id) => document.getElementById(id);
   const DRAFT_KEY = 'textrec-draft-v2'; // v2: текст хранится по страницам (draft.pages)
@@ -89,7 +87,6 @@
     saveDraft();
     window.scrollTo(0, 0);
     if (tg) step === 'edit' ? tg.enableClosingConfirmation() : tg.disableClosingConfirmation();
-    if (useMainButton) step === 'edit' ? tg.MainButton.show() : tg.MainButton.hide();
   }
   function setError(id, message) {
     const el = $(id);
@@ -268,7 +265,6 @@
   function openEditor() {
     const topic = draft.topic ? ` · ${draft.topic}` : '';
     $('target').textContent = `${draft.semester} семестр / ${draft.subject} / Записи · ${draft.date}${topic}`;
-    $('save-fallback-btn').hidden = useMainButton;
     renderPageList();
     show('edit');
     selectPage(Math.min(draft.page || 0, pages().length - 1));
@@ -656,12 +652,13 @@
     }
   }
 
-  function fitPhoto() {
+  /** Вписывает фото в окно; keepZoom оставляет приближение, если окно просто поменяло размер. */
+  function fitPhoto(keepZoom = false) {
     if (!img.naturalWidth) return;
     img.style.width = `${img.naturalWidth}px`;
     img.style.height = `${img.naturalHeight}px`;
     view.min = Math.min(pane.clientWidth / img.naturalWidth, pane.clientHeight / img.naturalHeight);
-    view.scale = view.min;
+    view.scale = keepZoom ? Math.max(view.scale, view.min) : view.min;
     applyView();
   }
 
@@ -744,8 +741,46 @@
     },
     { passive: false },
   );
-  // Клавиатура или поворот телефона меняют размер половины с фото — вписываем фото заново.
-  new ResizeObserver(() => !img.hidden && fitPhoto()).observe(pane);
+  // Граница, клавиатура или поворот телефона меняют размер окна с фото. Если фото было вписано целиком,
+  // вписываем заново, а если его приблизили — приближение сохраняется.
+  new ResizeObserver(() => !img.hidden && fitPhoto(view.scale > view.min * 1.001)).observe(pane);
+
+  // ── Граница между фото и текстом: её можно тянуть вверх и вниз, положение запоминается ──
+  const SPLIT_KEY = 'textrec-split';
+  const splitter = $('splitter');
+  let split = 0.5;
+  try {
+    split = Number(localStorage.getItem(SPLIT_KEY)) || 0.5;
+  } catch {
+    /* хранилище недоступно — граница посередине */
+  }
+  function setSplit(ratio) {
+    split = Math.min(0.85, Math.max(0.15, ratio));
+    $('step-edit').style.setProperty('--photo-share', `${(split * 100).toFixed(1)}%`);
+  }
+  setSplit(split);
+  splitter.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    splitter.setPointerCapture(e.pointerId);
+    splitter.classList.add('dragging');
+  });
+  splitter.addEventListener('pointermove', (e) => {
+    if (!splitter.hasPointerCapture(e.pointerId)) return;
+    const r = $('step-edit').getBoundingClientRect();
+    setSplit((e.clientY - r.top) / r.height);
+  });
+  const endSplitDrag = (e) => {
+    if (!splitter.hasPointerCapture(e.pointerId)) return;
+    splitter.releasePointerCapture(e.pointerId);
+    splitter.classList.remove('dragging');
+    try {
+      localStorage.setItem(SPLIT_KEY, String(split));
+    } catch {
+      /* не запомнилось — не страшно */
+    }
+  };
+  splitter.addEventListener('pointerup', endSplitDrag);
+  splitter.addEventListener('pointercancel', endSplitDrag);
 
   // ── Список фото: полумесяц слева, открывается нажатием или свайпом вправо ──
   function renderPageList() {
@@ -827,10 +862,9 @@
     if (saving) return;
     if (mode === 'edit') syncEditor();
     saving = true;
-    const btn = $('save-fallback-btn');
+    const btn = $('save-btn');
     btn.disabled = true;
     btn.textContent = 'Сохраняю…';
-    if (useMainButton) tg.MainButton.showProgress(false);
     try {
       const { path } = await api('/api/save', {
         method: 'POST',
@@ -856,7 +890,6 @@
       saving = false;
       btn.disabled = false;
       btn.textContent = 'Сохранить в репозиторий';
-      if (useMainButton) tg.MainButton.hideProgress();
     }
   }
 
@@ -917,8 +950,7 @@
   if (tg) tg.onEvent('viewportChanged', keepCaretVisible);
   $('drawer-tab').addEventListener('click', () => setDrawer(!drawerOpen()));
   $('drawer-backdrop').addEventListener('click', () => setDrawer(false));
-  $('save-fallback-btn').addEventListener('click', save);
-  if (useMainButton) tg.MainButton.setText('Сохранить в репозиторий').onClick(save);
+  $('save-btn').addEventListener('click', save);
   $('restart-btn').addEventListener('click', restart);
   $('new-btn').addEventListener('click', () => show('form'));
 
